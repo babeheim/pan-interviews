@@ -1,4 +1,4 @@
-pan-interview
+pan-interviews
 ===
 
 a shiny interface for researchers collecting interview data
