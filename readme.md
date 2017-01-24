@@ -12,7 +12,7 @@ Installation:
 1. Download the pan repository and unzip to a location of your choice.
 2. Open R and get required packages, e.g. via
 ```
-install.packages("shiny", "shinythemes", "shinyjs", "DT")
+install.packages(c("shiny", "shinythemes", "shinyjs", "DT"))
 ```
 3. Run the appropriate batch script to start the app:
    * For Windows users, click on 'run.bat'.
