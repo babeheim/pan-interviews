@@ -4,17 +4,17 @@ library(shiny)
 library(shinythemes)
 library(digest)
 library(DT)
-library(yaml)
+library(jsonlite)
 
-interview_settings <- yaml.load_file('interview-settings.yml')
+read_text = function(pathname) return (paste(readLines(pathname), collapse="\n"))
+
+interview_settings <- fromJSON(read_text('interview-settings.json'))
 
 responses_directory <- file.path(interview_settings$responses_directory)
 if(!dir.exists(responses_directory)) dir.create(responses_directory)
 
 responses_directory_backup <- file.path(interview_settings$responses_directory_backup)
 if(!dir.exists(responses_directory_backup)) dir.create(responses_directory_backup)
-
-read_text = function(pathname) return (paste(readLines(pathname), collapse="\n"))
 
 demog_interview_timestamp_raw <- Sys.time()
 demog_interview_timestamp <- round(as.numeric(demog_interview_timestamp_raw))

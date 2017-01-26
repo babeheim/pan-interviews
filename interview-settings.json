@@ -1,0 +1,10 @@
+{
+  "device_name": "Tablet PC #1",
+  "interviewer_name": "John",
+  "location": "Machiguenga Communities",
+  "latitude": null,
+  "longitude": null,
+  "responses_directory": "./responses",
+  "responses_directory_backup": "./sdcard-test",
+  "shiny_ui_theme": "slate"
+}
