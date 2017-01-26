@@ -4,11 +4,14 @@ library(shiny)
 library(shinythemes)
 library(digest)
 library(DT)
+library(yaml)
 
-responses_directory <- file.path("./responses")
+interview_settings <- yaml.load_file('interview-settings.yml')
+
+responses_directory <- file.path(interview_settings$responses_directory)
 if(!dir.exists(responses_directory)) dir.create(responses_directory)
 
-responses_directory_backup <- file.path("./sdcard-test")
+responses_directory_backup <- file.path(interview_settings$responses_directory_backup)
 if(!dir.exists(responses_directory_backup)) dir.create(responses_directory_backup)
 
 read_text = function(pathname) return (paste(readLines(pathname), collapse="\n"))
@@ -26,7 +29,7 @@ relative_table <- data.frame(
     relative_name=character(), 
     relative_subj_relationship=character(), 
     relative_sex=character(), 
-    relative_age=numeric(), 
+    relative_age=character(), 
     relative_dob=character(), 
     relative_mom=character(), 
     relative_dad=character(), 
@@ -38,6 +41,8 @@ story_table <- data.frame(story_timestamp=character(),
 trip_table <- data.frame(
     trip_id=character(), 
     travel_subj_name=character(),
+    travel_subj_age=character(),
+    travel_subj_sex=character(),
     trip_entry_timestamp=character(),
     trip_location=character(),
     trip_times_visited=character(), 
@@ -69,10 +74,9 @@ readResponses <- function(dir){
 }
 
 resetTravelInterview <- function(session){
-    updateTextInput(session, "trip_subj_name", value="")
-    updateRadioButtons(session, "trip_subj_sex", selected="male")
-    updateNumericInput(session, "trip_subj_age", value="")
-    updateNumericInput(session, "trip_subj_location", value="")
+    updateTextInput(session, "travel_subj_name", value="")
+    updateRadioButtons(session, "travel_subj_sex", selected="male")
+    updateTextInput(session, "travel_subj_age", value="")
     resetTripFields(session)
     trip_table <- data.frame(
         trip_id=character(), 
@@ -101,7 +105,7 @@ resetTravelInterview <- function(session){
 resetStoryInterview <- function(session){
     updateTextInput(session, "story_subj_name", value="")
     updateRadioButtons(session, "story_subj_sex", selected="male")
-    updateNumericInput(session, "story_subj_age", value="")
+    updateTextInput(session, "story_subj_age", value="")
     updateTextInput(session, "story_misc_notes", value="")
     updateTextInput(session, "story_title", value="")
     updateTextAreaInput(session, "story_body", value="")
@@ -112,15 +116,15 @@ resetStoryInterview <- function(session){
 resetDemogInterview <- function(session){
     updateTextInput(session, "demog_subj_name", value="")
     updateRadioButtons(session, "demog_subj_sex", selected="male")
-    updateNumericInput(session, "demog_subj_age", value="")
-    updateDateInput(session, "demog_subj_dob", value=NULL)
+    updateTextInput(session, "demog_subj_age", value="")
+    updateTextInput(session, "demog_subj_dob", value="")
     updateNumericInput(session, "demog_number_kids", value="")
     resetRelativeFields(session)
     relative_table <<- data.frame(
         relative_name=character(), 
         relative_subj_relationship=character(), 
         relative_sex=character(), 
-        relative_age=numeric(), 
+        relative_age=character(), 
         relative_dob=character(), 
         relative_mom=character(), 
         relative_dad=character(), 
@@ -155,8 +159,8 @@ resetRelativeFields <- function(session){
     updateTextInput(session, "relative_name", value = "")
     updateTextInput(session, "relative_subj_relationship", value="")
     updateRadioButtons(session, "relative_sex", selected = "male")
-    updateDateInput(session, "relative_dob", value=NULL)
-    updateNumericInput(session, "relative_age", value = "")
+    updateTextInput(session, "relative_dob", value="")
+    updateTextInput(session, "relative_age", value = "")
     updateTextInput(session, "relative_mom", value = "")
     updateTextInput(session, "relative_dad", value = "")
     updateActionButton(session, "add_relative", label = "Add Relative")
@@ -166,7 +170,7 @@ resetRelativeFields <- function(session){
 
 ui <- fluidPage(title="interviews",
     shinyjs::useShinyjs(),
-    theme=shinytheme('slate'),
+    theme=shinytheme(interview_settings$shiny_ui_theme),
     navbarPage("pan",
         tabPanel("travel",
             fluidRow(
@@ -175,7 +179,7 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="travel_subj_name", label="Name", value=""),
                         radioButtons(inputId="travel_subj_sex", label=NULL, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        numericInput(inputId="travel_subj_age", label="Age", value=NULL)
+                        textInput(inputId="travel_subj_age", label="Age", value="")
                     )   
                 ),
                 column(width=3,
@@ -274,7 +278,7 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="story_subj_name", label="Name", value=""),
                         radioButtons(inputId="story_subj_sex", label=NULL, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        numericInput(inputId="story_subj_age", label="Age", value=NULL)
+                        textInput(inputId="story_subj_age", label="Age", value="")
                     )
                 ),
                 column(width=3,
@@ -341,9 +345,8 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="demog_subj_name", label="Name", value=""),
                         radioButtons(inputId="demog_subj_sex", label=NULL, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        numericInput(inputId="demog_subj_age", label="Age", value=NULL),
-                        dateInput(inputId="demog_subj_dob",label="Date of Birth", value="", 
-                                format="d MM, yyyy"),
+                        textInput(inputId="demog_subj_age", label="Age", value=""),
+                        textInput(inputId="demog_subj_dob",label="Date of Birth", value=""),
                         numericInput(inputId="demog_number_kids", label="Number of Kids", value="")
                     )
                 ),
@@ -354,9 +357,8 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="relative_subj_relationship", label="Relationship"),
                         radioButtons(inputId="relative_sex", label=NA, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        dateInput(inputId="relative_dob", label="Date of Birth", value="", 
-                            format="d MM, yyyy"),
-                        numericInput(inputId="relative_age", label="Age", value=""),
+                        textInput(inputId="relative_dob", label="Date of Birth", value=""),
+                        textInput(inputId="relative_age", label="Age", value=""),
                         textInput(inputId="relative_mom", label="Mother"),
                         textInput(inputId="relative_dad", label="Father"),
 
@@ -429,7 +431,7 @@ ui <- fluidPage(title="interviews",
                 h4("Preferences"),
                 div(
                   selectInput(inputId='shinytheme_selector', label='UI Themes', choices=c("default", 
-                  shinythemes:::allThemes()), selected='slate', selectize = FALSE),
+                  shinythemes:::allThemes()), selected=interview_settings$shiny_ui_theme, selectize = FALSE),
                     tags$script(read_text('shinytheme-picker.css'))
                 ),
                 wellPanel(
@@ -442,11 +444,11 @@ ui <- fluidPage(title="interviews",
             column(width=3,
                 wellPanel(
                     h4("Interview Settings"),
-                    textInput(inputId="interview_device", label="Device Name", value='Tablet PC #1'),
-                    textInput(inputId="interviewer_name", label="Interviewer", value=''),
-                    textInput(inputId='interview_location', label='Current Location', value=''),
-                    textInput(inputId='interview_lat', label='Latitude', value=''),
-                    textInput(inputId='interview_lon', label='Longitude', value='')
+                    textInput(inputId="interview_device", label="Device Name", value=interview_settings$device_name),
+                    textInput(inputId="interviewer_name", label="Interviewer", value=interview_settings$interviewer_name),
+                    textInput(inputId='interview_location', label='Current Location', value=interview_settings$location),
+                    textInput(inputId='interview_lat', label='Latitude', value=interview_settings$latitude),
+                    textInput(inputId='interview_lon', label='Longitude', value=interview_settings$longitude)
                 )
             ),
             column(width=6,
@@ -468,6 +470,11 @@ ui <- fluidPage(title="interviews",
                             br(),
                             shinyjs::hidden(img(id="folder_two_checkmark", src="check.png"))
                         )
+                    ),
+                    fluidRow(
+                        column(width=12,
+                        "file paths can be changed in the `interview-settings.yml` file"
+                        )
                     )
                 )
             )
@@ -478,6 +485,11 @@ ui <- fluidPage(title="interviews",
 
 
 server <- function(input, output, session){
+
+    observe({
+        shinyjs::disable("data_destination_one")
+        shinyjs::disable("data_destination_two")
+    })
 
     observe({
         input$navbar
@@ -831,7 +843,7 @@ server <- function(input, output, session){
             relative_subj_relationship=input$relative_subj_relationship, 
             relative_sex=input$relative_sex, 
             relative_age=input$relative_age, 
-            relative_dob=as.character(input$relative_dob), 
+            relative_dob=input$relative_dob, 
             relative_mom=input$relative_mom, 
             relative_dad=input$relative_dad, 
             stringsAsFactors=FALSE)
@@ -860,9 +872,8 @@ server <- function(input, output, session){
         updateTextInput(session, "relative_name", value = relative_table$relative_name[sel])
         updateTextInput(session, "relative_subj_relationship", value=relative_table$relative_subj_relationship[sel])
         updateRadioButtons(session, "relative_sex", selected = as.character(relative_table$relative_sex[sel]))
-        updateNumericInput(session, "relative_age", value = relative_table$relative_age[sel])
-        print(relative_table$relative_dob[sel])
-        updateDateInput(session, "relative_dob", value = relative_table$relative_dob[sel])
+        updateTextInput(session, "relative_age", value = relative_table$relative_age[sel])
+        updateText(session, "relative_dob", value = relative_table$relative_dob[sel])
         updateTextInput(session, "relative_mom", value = relative_table$relative_mom[sel])
         updateTextInput(session, "relative_dad", value = relative_table$relative_dad[sel])
         updateActionButton(session, "add_relative", label = "Update Relative")
@@ -893,7 +904,8 @@ server <- function(input, output, session){
             interview_lon=input$interview_lon,
             subj_name=input$demog_subj_name, 
             subj_sex=input$demog_subj_sex,
-            subj_dob=as.character(input$demog_subj_dob),
+            subj_dob=input$demog_subj_dob,
+            subj_age=input$demog_subj_age,
             subj_nkids=input$demog_number_kids,
             stringsAsFactors=FALSE)
         demog_interview_hash5 <- substr(digest(demog_interview_output, algo="md5"), 1, 10)
