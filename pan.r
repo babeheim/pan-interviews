@@ -85,6 +85,8 @@ resetTravelInterview <- function(session){
     trip_table <- data.frame(
         trip_id=character(), 
         travel_subj_name=character(),
+        travel_subj_age=character(),
+        travel_subj_sex=character(),
         trip_entry_timestamp=character(),
         trip_location=character(),
         trip_times_visited=character(), 
@@ -93,7 +95,7 @@ resetTravelInterview <- function(session){
         school_yesno=logical(), 
         school_duration=character(), 
         school_level=character(),
-        school_tuition=character(), 
+        school_tuition=character(),
         school_notes=character(),
         work_yesno=logical(), 
         work_duration=character(),
@@ -333,8 +335,8 @@ ui <- fluidPage(title="pan-interviews",
                 ),
                 column(width=3,
                     wellPanel(
-                        tags$style(HTML('#story_table {color:#848484}')),
-                        DT::dataTableOutput("story_table"),
+                        tags$style(HTML('#story_index {color:#848484}')),
+                        DT::dataTableOutput("story_index"),
                         actionButton(inputId='delete_story', label='Delete Vignette')
                     )
                 )
@@ -522,12 +524,14 @@ server <- function(input, output, session){
         if(length(db)>0){
             interview_name_list <- character(0)
             subject_name_list <- character(0)
+            subject_age_list <- character(0)
             for(i in 1:length(db)){ 
                 interview_name_list[i] <- db[[i]]$interview_name[1]
-                subject_name_list[i] <- db[[1]]$subj_name[1]
+                subject_name_list[i] <- db[[i]]$subj_name[1]
+                subject_age_list[i] <- db[[i]]$subj_age[1]
             }
             name <- sort(unique(subject_name_list))
-            age <- db[[match(name, subject_name_list)]]$subj_age
+            age <- subject_age_list[match(name, subject_name_list)]
             has_demog <- as.numeric(name %in% subject_name_list[interview_name_list=='demog_main'])
             has_story <- as.numeric(name %in% subject_name_list[interview_name_list=='story_main'])
             has_travel <- as.numeric(name %in% subject_name_list[interview_name_list=='travel_main'])
@@ -603,7 +607,6 @@ server <- function(input, output, session){
 
     ## <narratives server logic> ##
     shinyjs::onclick("story_subj_name", {
-        print('test')
         story_interview_timestamp_raw <<- Sys.time()
         story_interview_timestamp <<- as.numeric(story_interview_timestamp_raw)
         shinyjs::hide("story_checkmark")
@@ -619,24 +622,24 @@ server <- function(input, output, session){
         updateTextInput(session, inputId="story_title", value="")
     })
     observe({
-      if(is.null(input$story_table_rows_selected)){ 
+      if(is.null(input$story_index_rows_selected)){ 
         shinyjs::disable("delete_story")
       } else {
         shinyjs::enable("delete_story")
       } 
     })
     observeEvent(input$delete_story, {
-        if (length(input$story_table_rows_selected) > 0) {
-            drop_row <- as.numeric(input$story_table_rows_selected)
+        if (length(input$story_index_rows_selected) > 0) {
+            drop_row <- as.numeric(input$story_index_rows_selected)
             story_table <<- story_table[-drop_row, ,drop=FALSE]
             resetTripFields(session=session)
         }
     })
     output$story_body_toprint <- renderText({
-        input$story_table_rows_selected
-        story_table[input$story_table_rows_selected,"story_body"]
+        input$story_index_rows_selected
+        story_table[input$story_index_rows_selected,"story_body"]
     })
-    output$story_table <- DT::renderDataTable({
+    output$story_index <- DT::renderDataTable({
         input$add_story
         input$delete_story
         input$story_submit_yes
@@ -669,7 +672,7 @@ server <- function(input, output, session){
             interview_lon=input$interview_lon,
             subj_name=input$story_subj_name, 
             subj_sex=input$story_subj_sex, 
-            story_subj_age=input$story_subj_age, 
+            subj_age=input$story_subj_age, 
             story_misc_notes=input$story_misc_notes, stringsAsFactors=FALSE)
         story_interview_filename <- paste(
             story_interview_output$subj_name,
@@ -681,11 +684,12 @@ server <- function(input, output, session){
         write.csv(story_interview_output, file.path(responses_directory_backup, story_interview_filename), row.names=FALSE)
         if(nrow(story_table)>0){
             story_table$interview_name <- "story_list"
-            story_table$story_interview_timestamp <- story_interview_timestamp
+            story_table$interview_timestamp <- story_interview_timestamp
             story_table$subj_name <- story_interview_output$subj_name
+            story_table$subj_age <- story_interview_output$subj_age
             story_table_filename <- paste(
-                story_table$subj_name,
-                story_table$interview_name,
+                story_table$subj_name[1],
+                story_table$interview_name[1],
                 format(story_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
             )
             story_table_filename <- paste0(story_table_filename, ".csv")
@@ -787,6 +791,8 @@ server <- function(input, output, session){
         new_trip <- data.frame(
             trip_id=input$trip_id,
             travel_subj_name=input$travel_subj_name,
+            travel_subj_age=input$travel_subj_age,
+            travel_subj_sex=input$travel_subj_sex,
             trip_entry_timestamp=as.numeric(Sys.time()),
             trip_location=input$trip_location,
             trip_times_visited=input$trip_times_visited,
@@ -865,9 +871,10 @@ server <- function(input, output, session){
             trip_table$interview_name <- "travel_list"
             trip_table$interview_timestamp <- travel_interview_timestamp
             trip_table$subj_name <- travel_interview_output$subj_name
+            trip_table$subj_age <- travel_interview_output$subj_age
             trip_table_filename <- paste(
-                trip_table$subj_name,
-                trip_table$interview_name,
+                trip_table$subj_name[1],
+                trip_table$interview_name[1],
                 format(travel_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
             )
             trip_table_filename <- paste0(trip_table_filename, ".csv")
@@ -888,7 +895,7 @@ server <- function(input, output, session){
     observeEvent(input$add_relative, {
         edit_row <- input$relative_table_rows_selected
         if(is.null(edit_row) | input$relative_id=="0") edit_row <- nrow(relative_table) + 1
-        new_trip <- data.frame(
+        new_relative <- data.frame(
             relative_name=input$relative_name, 
             relative_subj_relationship=input$relative_subj_relationship, 
             relative_sex=input$relative_sex, 
@@ -898,7 +905,7 @@ server <- function(input, output, session){
             relative_dad=input$relative_dad, 
             stringsAsFactors=FALSE)
         resetRelativeFields(session=session)
-        relative_table[edit_row,] <<- new_trip
+        relative_table[edit_row,] <<- new_relative
       }
     )
     observeEvent(input$delete_relative, {
@@ -923,7 +930,7 @@ server <- function(input, output, session){
         updateTextInput(session, "relative_subj_relationship", value=relative_table$relative_subj_relationship[sel])
         updateRadioButtons(session, "relative_sex", selected = as.character(relative_table$relative_sex[sel]))
         updateTextInput(session, "relative_age", value = relative_table$relative_age[sel])
-        updateText(session, "relative_dob", value = relative_table$relative_dob[sel])
+        updateTextInput(session, "relative_dob", value = relative_table$relative_dob[sel])
         updateTextInput(session, "relative_mom", value = relative_table$relative_mom[sel])
         updateTextInput(session, "relative_dad", value = relative_table$relative_dad[sel])
         updateActionButton(session, "add_relative", label = "Update Relative")
@@ -970,10 +977,11 @@ server <- function(input, output, session){
             relative_table$interview_name <- "demog_relatives"
             relative_table$interview_timestamp <- demog_interview_timestamp
             relative_table$subj_name <- demog_interview_output$subj_name
+            relative_table$subj_age <- demog_interview_output$subj_age
             relative_table_filename <- paste(
-                relative_table$subj_name,
-                relative_table$interview_name,
-                format(relative_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
+                relative_table$subj_name[1],
+                relative_table$interview_name[1],
+                format(demog_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
             )
             relative_table_filename <- paste0(relative_table_filename, ".csv")
             write.csv(relative_table, file.path(responses_directory, relative_table_filename), row.names=FALSE)
