@@ -40,9 +40,9 @@ story_table <- data.frame(story_timestamp=character(),
 
 trip_table <- data.frame(
     trip_id=character(), 
-    travel_subj_name=character(),
-    travel_subj_age=character(),
-    travel_subj_sex=character(),
+    subj_name=character(),
+    subj_age=character(),
+    subj_sex=character(),
     trip_entry_timestamp=character(),
     trip_location=character(),
     trip_times_visited=character(), 
@@ -84,9 +84,9 @@ resetTravelInterview <- function(session){
     resetTripFields(session)
     trip_table <- data.frame(
         trip_id=character(), 
-        travel_subj_name=character(),
-        travel_subj_age=character(),
-        travel_subj_sex=character(),
+        subj_name=character(),
+        subj_age=character(),
+        subj_sex=character(),
         trip_entry_timestamp=character(),
         trip_location=character(),
         trip_times_visited=character(), 
@@ -663,8 +663,9 @@ server <- function(input, output, session){
         shinyjs::show("story_submit_confirmation")
         shinyjs::show("story_checkmark")
         story_interview_output <- data.frame(
-            interview_timestamp=story_interview_timestamp,
             interview_name="story_main",
+            interview_timestamp_legible=as.character(format(story_interview_timestamp_raw, "%Y%m%d-%H%M%OS")),
+            interview_timestamp=story_interview_timestamp,
             interviewer_name=input$interviewer_name, 
             interview_device=input$interview_device,
             interview_location=input$interview_location,
@@ -684,7 +685,8 @@ server <- function(input, output, session){
         write.csv(story_interview_output, file.path(responses_directory_backup, story_interview_filename), row.names=FALSE)
         if(nrow(story_table)>0){
             story_table$interview_name <- "story_list"
-            story_table$interview_timestamp <- story_interview_timestamp
+            story_table$interview_timestamp_legible <- story_interview_output$interview_timestamp_legible
+            story_table$interview_timestamp <- story_interview_output$interview_timestamp
             story_table$subj_name <- story_interview_output$subj_name
             story_table$subj_age <- story_interview_output$subj_age
             story_table_filename <- paste(
@@ -790,9 +792,9 @@ server <- function(input, output, session){
         if(is.null(edit_row) | input$trip_id=="0") edit_row <- nrow(trip_table) + 1
         new_trip <- data.frame(
             trip_id=input$trip_id,
-            travel_subj_name=input$travel_subj_name,
-            travel_subj_age=input$travel_subj_age,
-            travel_subj_sex=input$travel_subj_sex,
+            subj_name=input$travel_subj_name,
+            subj_age=input$travel_subj_age,
+            subj_sex=input$travel_subj_sex,
             trip_entry_timestamp=as.numeric(Sys.time()),
             trip_location=input$trip_location,
             trip_times_visited=input$trip_times_visited,
@@ -849,15 +851,16 @@ server <- function(input, output, session){
         shinyjs::show("travel_checkmark")
         travel_interview_output <- data.frame(
             interview_name="travel_main",
+            interview_timestamp_legible=as.character(format(travel_interview_timestamp_raw, "%Y%m%d-%H%M%OS")),
             interview_timestamp=travel_interview_timestamp, 
             interviewer_name=input$interviewer_name, 
             interview_device=input$interview_device,
             interview_location=input$interview_location,
             interview_lat=input$interview_lat,
             interview_lon=input$interview_lon,
-            subj_name=input$travel_subj_name, 
-            subj_sex=input$travel_subj_sex, 
-            subj_age=input$travel_subj_age, 
+            subj_name=input$travel_subj_name,
+            subj_age=input$travel_subj_age,
+            subj_sex=input$travel_subj_sex,
             stringsAsFactors=FALSE)
         travel_interview_filename <- paste(
             travel_interview_output$subj_name,
@@ -869,7 +872,8 @@ server <- function(input, output, session){
         write.csv(travel_interview_output, file.path(responses_directory_backup, travel_interview_filename), row.names=FALSE)
         if(nrow(trip_table)>0){
             trip_table$interview_name <- "travel_list"
-            trip_table$interview_timestamp <- travel_interview_timestamp
+            trip_table$interview_timestamp_legible <- travel_interview_output$interview_timestamp_legible
+            trip_table$interview_timestamp <- travel_interview_output$interview_timestamp
             trip_table$subj_name <- travel_interview_output$subj_name
             trip_table$subj_age <- travel_interview_output$subj_age
             trip_table_filename <- paste(
@@ -953,6 +957,7 @@ server <- function(input, output, session){
         shinyjs::show("demog_checkmark")
         demog_interview_output <- data.frame(
             interview_name="demog_main",
+            interview_timestamp_legible=as.character(format(demog_interview_timestamp_raw, "%Y%m%d-%H%M%OS")),
             interview_timestamp=demog_interview_timestamp, 
             interviewer_name=input$interviewer_name, 
             interview_device=input$interview_device,
@@ -975,7 +980,8 @@ server <- function(input, output, session){
         write.csv(demog_interview_output, file.path(responses_directory_backup, demog_interview_filename), row.names=FALSE)
         if(nrow(relative_table)>0){
             relative_table$interview_name <- "demog_relatives"
-            relative_table$interview_timestamp <- demog_interview_timestamp
+            relative_table$interview_timestamp_legible <- demog_interview_output$interview_timestamp_ledigble
+            relative_table$interview_timestamp <- demog_interview_output$interview_timestamp_ledigble
             relative_table$subj_name <- demog_interview_output$subj_name
             relative_table$subj_age <- demog_interview_output$subj_age
             relative_table_filename <- paste(
