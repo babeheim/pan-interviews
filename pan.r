@@ -4,11 +4,14 @@ library(shiny)
 library(shinythemes)
 library(digest)
 library(DT)
+library(yaml)
 
-responses_directory <- file.path("./responses")
+interview_settings <- yaml.load_file('interview-settings.yml')
+
+responses_directory <- file.path(interview_settings$responses_directory)
 if(!dir.exists(responses_directory)) dir.create(responses_directory)
 
-responses_directory_backup <- file.path("./sdcard-test")
+responses_directory_backup <- file.path(interview_settings$responses_directory_backup)
 if(!dir.exists(responses_directory_backup)) dir.create(responses_directory_backup)
 
 read_text = function(pathname) return (paste(readLines(pathname), collapse="\n"))
@@ -26,7 +29,7 @@ relative_table <- data.frame(
     relative_name=character(), 
     relative_subj_relationship=character(), 
     relative_sex=character(), 
-    relative_age=numeric(), 
+    relative_age=character(), 
     relative_dob=character(), 
     relative_mom=character(), 
     relative_dad=character(), 
@@ -37,7 +40,9 @@ story_table <- data.frame(story_timestamp=character(),
 
 trip_table <- data.frame(
     trip_id=character(), 
-    travel_subj_name=character(),
+    subj_name=character(),
+    subj_age=character(),
+    subj_sex=character(),
     trip_entry_timestamp=character(),
     trip_location=character(),
     trip_times_visited=character(), 
@@ -46,17 +51,21 @@ trip_table <- data.frame(
     school_yesno=logical(), 
     school_duration=character(), 
     school_level=character(),
-    school_tuition=character(), 
+    school_tuition=character(),
+    school_notes=character(),
     work_yesno=logical(), 
     work_duration=character(),
     work_whowith=character(), 
     work_details=character(),
+    work_notes=character(),
     market_yesno=logical(), 
     market_sell=character(), 
     market_sell_who=character(),
     market_buy=character(), 
     market_buy_who=character(), 
     market_notes=character(), 
+    other_yesno=logical(),
+    other_notes=character(),
     stringsAsFactors=FALSE)
 
 readResponses <- function(dir){
@@ -69,14 +78,15 @@ readResponses <- function(dir){
 }
 
 resetTravelInterview <- function(session){
-    updateTextInput(session, "trip_subj_name", value="")
-    updateRadioButtons(session, "trip_subj_sex", selected="male")
-    updateNumericInput(session, "trip_subj_age", value="")
-    updateNumericInput(session, "trip_subj_location", value="")
+    updateTextInput(session, "travel_subj_name", value="")
+    updateRadioButtons(session, "travel_subj_sex", selected="male")
+    updateTextInput(session, "travel_subj_age", value="")
     resetTripFields(session)
     trip_table <- data.frame(
         trip_id=character(), 
-        travel_subj_name=character(),
+        subj_name=character(),
+        subj_age=character(),
+        subj_sex=character(),
         trip_entry_timestamp=character(),
         trip_location=character(),
         trip_times_visited=character(), 
@@ -85,23 +95,28 @@ resetTravelInterview <- function(session){
         school_yesno=logical(), 
         school_duration=character(), 
         school_level=character(),
-        school_tuition=character(), 
+        school_tuition=character(),
+        school_notes=character(),
         work_yesno=logical(), 
         work_duration=character(),
         work_whowith=character(), 
         work_details=character(),
+        work_notes=character(),
         market_yesno=logical(), 
         market_sell=character(), 
         market_sell_who=character(),
         market_buy=character(), 
         market_buy_who=character(), 
-        market_notes=character(), stringsAsFactors=FALSE)
+        market_notes=character(), 
+        other_yesno=logical(),
+        other_notes=character(),
+        stringsAsFactors=FALSE)
 }
 
 resetStoryInterview <- function(session){
     updateTextInput(session, "story_subj_name", value="")
     updateRadioButtons(session, "story_subj_sex", selected="male")
-    updateNumericInput(session, "story_subj_age", value="")
+    updateTextInput(session, "story_subj_age", value="")
     updateTextInput(session, "story_misc_notes", value="")
     updateTextInput(session, "story_title", value="")
     updateTextAreaInput(session, "story_body", value="")
@@ -112,15 +127,15 @@ resetStoryInterview <- function(session){
 resetDemogInterview <- function(session){
     updateTextInput(session, "demog_subj_name", value="")
     updateRadioButtons(session, "demog_subj_sex", selected="male")
-    updateNumericInput(session, "demog_subj_age", value="")
-    updateDateInput(session, "demog_subj_dob", value=NULL)
+    updateTextInput(session, "demog_subj_age", value="")
+    updateTextInput(session, "demog_subj_dob", value="")
     updateNumericInput(session, "demog_number_kids", value="")
     resetRelativeFields(session)
     relative_table <<- data.frame(
         relative_name=character(), 
         relative_subj_relationship=character(), 
         relative_sex=character(), 
-        relative_age=numeric(), 
+        relative_age=character(), 
         relative_dob=character(), 
         relative_mom=character(), 
         relative_dad=character(), 
@@ -137,16 +152,20 @@ resetTripFields <- function(session){
     updateTextInput(session, "school_duration", value="")
     updateTextInput(session, "school_level", value="")
     updateTextInput(session, "school_tuition", value="")
+    updateTextInput(session, "school_notes", value="")
     updateTextInput(session, "work_yesno", value=FALSE)
     updateTextInput(session, "work_duration", value="")
     updateTextInput(session, "work_whowith", value="")
     updateTextInput(session, "work_details", value="")
+    updateTextInput(session, "work_notes", value="")
     updateTextInput(session, "market_yesno", value=FALSE)
     updateTextInput(session, "market_sell", value="")
     updateTextInput(session, "market_sell_who", value="")
     updateTextInput(session, "market_buy", value="")
     updateTextInput(session, "market_buy_who", value="")
     updateTextInput(session, "market_notes", value="")
+    updateTextInput(session, "other_yesno", value=FALSE)
+    updateTextInput(session, "other_notes", value="")
     updateActionButton(session, "add_trip", label = "Add Trip")
 }
 
@@ -155,8 +174,8 @@ resetRelativeFields <- function(session){
     updateTextInput(session, "relative_name", value = "")
     updateTextInput(session, "relative_subj_relationship", value="")
     updateRadioButtons(session, "relative_sex", selected = "male")
-    updateDateInput(session, "relative_dob", value=NULL)
-    updateNumericInput(session, "relative_age", value = "")
+    updateTextInput(session, "relative_dob", value="")
+    updateTextInput(session, "relative_age", value = "")
     updateTextInput(session, "relative_mom", value = "")
     updateTextInput(session, "relative_dad", value = "")
     updateActionButton(session, "add_relative", label = "Add Relative")
@@ -164,10 +183,10 @@ resetRelativeFields <- function(session){
     shinyjs::disable("add_relative")
 }
 
-ui <- fluidPage(title="interviews",
+ui <- fluidPage(title="pan-interviews",
     shinyjs::useShinyjs(),
-    theme=shinytheme('slate'),
-    navbarPage("pan",
+    theme=shinytheme(interview_settings$shiny_ui_theme),
+    navbarPage(title="pan", id='main_navbar',
         tabPanel("travel",
             fluidRow(
                 column(width=3,
@@ -175,7 +194,7 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="travel_subj_name", label="Name", value=""),
                         radioButtons(inputId="travel_subj_sex", label=NULL, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        numericInput(inputId="travel_subj_age", label="Age", value=NULL)
+                        textInput(inputId="travel_subj_age", label="Age", value="")
                     )   
                 ),
                 column(width=3,
@@ -223,25 +242,31 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="trip_hosts", label="Whom did you stay with?", value=""),
                         column(width=12, offset=7, actionButton(inputId="add_trip", label="Add Trip"))
                     ),
-                    column(width=3,
+                    column(width=2,
                         checkboxInput(inputId="school_yesno", label="School", value=FALSE),
                         textInput(inputId="school_duration", label="For how long?", value=""),
                         textInput(inputId="school_level", label="What grade levels?", value=""),
-                        textInput(inputId="school_tuition", label="Who paid for school?", value="")
+                        textInput(inputId="school_tuition", label="Who paid for school?", value=""),
+                        textAreaInput(inputId="school_notes", label="Notes", value="", resize="none")
                     ),
-                    column(width=3,
+                    column(width=2,
                         checkboxInput(inputId="work_yesno", label="Work", value=FALSE),
                         textInput(inputId="work_duration", label="For how long?", value=""),
                         textInput(inputId="work_whowith", label="Who did you work with?", value=""),
-                        textInput(inputId="work_details", label="What was the nature of the work?", value="")
+                        textInput(inputId="work_details", label="What was the nature of the work?", value=""),
+                        textAreaInput(inputId="work_notes", label="Notes", value="", resize="none")
                     ),                
-                    column(width=3,
+                    column(width=2,
                         checkboxInput(inputId="market_yesno", label="Buy/Sell", value=FALSE),
                         textInput(inputId="market_sell", label="What did you sell?", value=""),
                         textInput(inputId="market_sell_who", label="To whom?", value=""),
                         textInput(inputId="market_buy", label="What did you buy?", value=""),
                         textInput(inputId="market_buy_who", label="From whom?", value=""),
                         textAreaInput(inputId="market_notes", label="Notes", value="", resize="none")
+                    ),                
+                    column(width=3,
+                        checkboxInput(inputId="other_yesno", label="Other", value=FALSE),
+                        textAreaInput(inputId="other_notes", label="Notes", value="", height=300, resize="none")
                     )
                 )
             ),
@@ -274,7 +299,7 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="story_subj_name", label="Name", value=""),
                         radioButtons(inputId="story_subj_sex", label=NULL, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        numericInput(inputId="story_subj_age", label="Age", value=NULL)
+                        textInput(inputId="story_subj_age", label="Age", value="")
                     )
                 ),
                 column(width=3,
@@ -310,8 +335,8 @@ ui <- fluidPage(title="interviews",
                 ),
                 column(width=3,
                     wellPanel(
-                        tags$style(HTML('#story_table {color:#848484}')),
-                        DT::dataTableOutput("story_table"),
+                        tags$style(HTML('#story_index {color:#848484}')),
+                        DT::dataTableOutput("story_index"),
                         actionButton(inputId='delete_story', label='Delete Vignette')
                     )
                 )
@@ -341,9 +366,8 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="demog_subj_name", label="Name", value=""),
                         radioButtons(inputId="demog_subj_sex", label=NULL, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        numericInput(inputId="demog_subj_age", label="Age", value=NULL),
-                        dateInput(inputId="demog_subj_dob",label="Date of Birth", value="", 
-                                format="d MM, yyyy"),
+                        textInput(inputId="demog_subj_age", label="Age", value=""),
+                        textInput(inputId="demog_subj_dob",label="Date of Birth", value=""),
                         numericInput(inputId="demog_number_kids", label="Number of Kids", value="")
                     )
                 ),
@@ -354,9 +378,8 @@ ui <- fluidPage(title="interviews",
                         textInput(inputId="relative_subj_relationship", label="Relationship"),
                         radioButtons(inputId="relative_sex", label=NA, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        dateInput(inputId="relative_dob", label="Date of Birth", value="", 
-                            format="d MM, yyyy"),
-                        numericInput(inputId="relative_age", label="Age", value=""),
+                        textInput(inputId="relative_dob", label="Date of Birth", value=""),
+                        textInput(inputId="relative_age", label="Age", value=""),
                         textInput(inputId="relative_mom", label="Mother"),
                         textInput(inputId="relative_dad", label="Father"),
 
@@ -429,7 +452,7 @@ ui <- fluidPage(title="interviews",
                 h4("Preferences"),
                 div(
                   selectInput(inputId='shinytheme_selector', label='UI Themes', choices=c("default", 
-                  shinythemes:::allThemes()), selected='slate', selectize = FALSE),
+                  shinythemes:::allThemes()), selected=interview_settings$shiny_ui_theme, selectize = FALSE),
                     tags$script(read_text('shinytheme-picker.css'))
                 ),
                 wellPanel(
@@ -442,11 +465,11 @@ ui <- fluidPage(title="interviews",
             column(width=3,
                 wellPanel(
                     h4("Interview Settings"),
-                    textInput(inputId="interview_device", label="Device Name", value='Tablet PC #1'),
-                    textInput(inputId="interviewer_name", label="Interviewer", value=''),
-                    textInput(inputId='interview_location', label='Current Location', value=''),
-                    textInput(inputId='interview_lat', label='Latitude', value=''),
-                    textInput(inputId='interview_lon', label='Longitude', value='')
+                    textInput(inputId="interview_device", label="Device Name", value=interview_settings$device_name),
+                    textInput(inputId="interviewer_name", label="Interviewer", value=interview_settings$interviewer_name),
+                    textInput(inputId='interview_location', label='Current Location', value=interview_settings$location),
+                    textInput(inputId='interview_lat', label='Latitude', value=interview_settings$latitude),
+                    textInput(inputId='interview_lon', label='Longitude', value=interview_settings$longitude)
                 )
             ),
             column(width=6,
@@ -468,6 +491,11 @@ ui <- fluidPage(title="interviews",
                             br(),
                             shinyjs::hidden(img(id="folder_two_checkmark", src="check.png"))
                         )
+                    ),
+                    fluidRow(
+                        column(width=12,
+                        "file paths can be changed in the `interview-settings.yml` file"
+                        )
                     )
                 )
             )
@@ -480,22 +508,30 @@ ui <- fluidPage(title="interviews",
 server <- function(input, output, session){
 
     observe({
-        input$navbar
-        db <<- readResponses(responses_directory)
+        shinyjs::disable("data_destination_one")
+        shinyjs::disable("data_destination_two")
+    })
+
+    observe({
+        if(input$main_navbar=="summary"){
+            db <<- readResponses(responses_directory)
+        }
     })
 
     output$response_register <- DT::renderDataTable({
-        input$navbar
+        input$main_navbar
         out <- NULL
         if(length(db)>0){
             interview_name_list <- character(0)
             subject_name_list <- character(0)
+            subject_age_list <- character(0)
             for(i in 1:length(db)){ 
                 interview_name_list[i] <- db[[i]]$interview_name[1]
-                subject_name_list[i] <- db[[1]]$subj_name[1]
+                subject_name_list[i] <- db[[i]]$subj_name[1]
+                subject_age_list[i] <- db[[i]]$subj_age[1]
             }
             name <- sort(unique(subject_name_list))
-            age <- db[[match(name, subject_name_list)]]$subj_age
+            age <- subject_age_list[match(name, subject_name_list)]
             has_demog <- as.numeric(name %in% subject_name_list[interview_name_list=='demog_main'])
             has_story <- as.numeric(name %in% subject_name_list[interview_name_list=='story_main'])
             has_travel <- as.numeric(name %in% subject_name_list[interview_name_list=='travel_main'])
@@ -505,7 +541,7 @@ server <- function(input, output, session){
     })
 
     output$counts <- renderText({
-        input$navbar
+        input$main_navbar
         out <- 0
         if(length(db)>0){
             name_list <- character()
@@ -586,24 +622,24 @@ server <- function(input, output, session){
         updateTextInput(session, inputId="story_title", value="")
     })
     observe({
-      if(is.null(input$story_table_rows_selected)){ 
+      if(is.null(input$story_index_rows_selected)){ 
         shinyjs::disable("delete_story")
       } else {
         shinyjs::enable("delete_story")
       } 
     })
     observeEvent(input$delete_story, {
-        if (length(input$story_table_rows_selected) > 0) {
-            drop_row <- as.numeric(input$story_table_rows_selected)
+        if (length(input$story_index_rows_selected) > 0) {
+            drop_row <- as.numeric(input$story_index_rows_selected)
             story_table <<- story_table[-drop_row, ,drop=FALSE]
             resetTripFields(session=session)
         }
     })
     output$story_body_toprint <- renderText({
-        input$story_table_rows_selected
-        story_table[input$story_table_rows_selected,"story_body"]
+        input$story_index_rows_selected
+        story_table[input$story_index_rows_selected,"story_body"]
     })
-    output$story_table <- DT::renderDataTable({
+    output$story_index <- DT::renderDataTable({
         input$add_story
         input$delete_story
         input$story_submit_yes
@@ -627,8 +663,9 @@ server <- function(input, output, session){
         shinyjs::show("story_submit_confirmation")
         shinyjs::show("story_checkmark")
         story_interview_output <- data.frame(
-            interview_timestamp=story_interview_timestamp,
             interview_name="story_main",
+            interview_timestamp_legible=as.character(format(story_interview_timestamp_raw, "%Y%m%d-%H%M%OS")),
+            interview_timestamp=story_interview_timestamp,
             interviewer_name=input$interviewer_name, 
             interview_device=input$interview_device,
             interview_location=input$interview_location,
@@ -636,20 +673,28 @@ server <- function(input, output, session){
             interview_lon=input$interview_lon,
             subj_name=input$story_subj_name, 
             subj_sex=input$story_subj_sex, 
-            story_subj_age=input$story_subj_age, 
+            subj_age=input$story_subj_age, 
             story_misc_notes=input$story_misc_notes, stringsAsFactors=FALSE)
-        story_interview_hash5 <- substr(digest(story_interview_output, algo="md5"), 1, 10)
-        story_interview_filename <- paste0(format(story_interview_timestamp_raw, "%Y%m%d-%H%M%OS"), 
-            "-", story_interview_hash5, ".csv")
+        story_interview_filename <- paste(
+            story_interview_output$subj_name,
+            story_interview_output$interview_name,
+            format(story_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
+        )
+        story_interview_filename <- paste0(story_interview_filename, ".csv")
         write.csv(story_interview_output, file.path(responses_directory, story_interview_filename), row.names=FALSE)
         write.csv(story_interview_output, file.path(responses_directory_backup, story_interview_filename), row.names=FALSE)
         if(nrow(story_table)>0){
             story_table$interview_name <- "story_list"
-            story_table$story_interview_timestamp <- story_interview_timestamp
-            story_table$story_subj_name <- input$story_subj_name
-            story_table_hash5 <- substr(digest(story_table, algo="md5"), 1, 10)
-            story_table_filename <- paste0(format(story_interview_timestamp_raw, "%Y%m%d-%H%M%OS"), 
-                "-", story_table_hash5, ".csv")
+            story_table$interview_timestamp_legible <- story_interview_output$interview_timestamp_legible
+            story_table$interview_timestamp <- story_interview_output$interview_timestamp
+            story_table$subj_name <- story_interview_output$subj_name
+            story_table$subj_age <- story_interview_output$subj_age
+            story_table_filename <- paste(
+                story_table$subj_name[1],
+                story_table$interview_name[1],
+                format(story_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
+            )
+            story_table_filename <- paste0(story_table_filename, ".csv")
             write.csv(story_table, file.path(responses_directory, story_table_filename), row.names=FALSE)            
             write.csv(story_table, file.path(responses_directory_backup, story_table_filename), row.names=FALSE)
 
@@ -664,19 +709,23 @@ server <- function(input, output, session){
             shinyjs::hide("school_duration")
             shinyjs::hide("school_level")
             shinyjs::hide("school_tuition")
+            shinyjs::hide("school_notes")
         } else {
             shinyjs::show("school_duration")
             shinyjs::show("school_level")
             shinyjs::show("school_tuition")
+            shinyjs::show("school_notes")
         }
         if(!input$work_yesno){ 
             shinyjs::hide("work_duration")
             shinyjs::hide("work_whowith")
             shinyjs::hide("work_details")
+            shinyjs::hide("work_notes")
         } else { 
             shinyjs::show("work_duration")
             shinyjs::show("work_whowith")
             shinyjs::show("work_details")
+            shinyjs::show("work_notes")
         }
         if(!input$market_yesno){ 
             shinyjs::hide("market_sell")
@@ -691,6 +740,11 @@ server <- function(input, output, session){
             shinyjs::show("market_buy_who")
             shinyjs::show("market_notes")
         }
+        if(!input$other_yesno){
+            shinyjs::hide("other_notes")
+        } else {
+            shinyjs::show("other_notes")
+        }
     })
     observeEvent(input$trip_table_rows_selected, {
         if(!is.null(input$trip_table_rows_selected)){
@@ -704,16 +758,20 @@ server <- function(input, output, session){
             updateTextInput(session, "school_duration", value = trip_table$school_duration[sel])
             updateTextInput(session, "school_level", value = trip_table$school_level[sel])
             updateTextInput(session, "school_tuition", value = trip_table$school_tuition[sel])
+            updateTextInput(session, "school_notes", value = trip_table$school_notes[sel])
             updateCheckboxInput(session, "work_yesno", value = trip_table$work_yesno[sel])  # wrong
             updateTextInput(session, "work_duration", value = trip_table$work_duration[sel])
             updateTextInput(session, "work_whowith", value = trip_table$work_whowith[sel])
             updateTextInput(session, "work_details", value = trip_table$work_details[sel])
+            updateTextInput(session, "work_notes", value = trip_table$work_notes[sel])
             updateCheckboxInput(session, "market_yesno", value = trip_table$market_yesno[sel])  # wrong
             updateTextInput(session, "market_sell", value = trip_table$market_sell[sel])
             updateTextInput(session, "market_sell_who", value = trip_table$market_sell_who[sel])
             updateTextInput(session, "market_buy", value = trip_table$market_buy[sel])
             updateTextInput(session, "market_buy_who", value = trip_table$market_buy_who[sel])
             updateTextInput(session, "market_notes", value = trip_table$market_notes[sel])
+            updateTextInput(session, "other_yesno", value = trip_table$other_yesno[sel])
+            updateTextInput(session, "other_notes", value = trip_table$other_notes[sel])
             shinyjs::enable("delete_trip")
             updateActionButton(session, "add_trip", label = "Update Trip")
         }
@@ -734,7 +792,9 @@ server <- function(input, output, session){
         if(is.null(edit_row) | input$trip_id=="0") edit_row <- nrow(trip_table) + 1
         new_trip <- data.frame(
             trip_id=input$trip_id,
-            travel_subj_name=input$travel_subj_name,
+            subj_name=input$travel_subj_name,
+            subj_age=input$travel_subj_age,
+            subj_sex=input$travel_subj_sex,
             trip_entry_timestamp=as.numeric(Sys.time()),
             trip_location=input$trip_location,
             trip_times_visited=input$trip_times_visited,
@@ -744,17 +804,21 @@ server <- function(input, output, session){
             school_duration=input$school_duration,
             school_level=input$school_level,
             school_tuition=input$school_tuition,
+            school_notes=input$school_notes,
             work_yesno=input$work_yesno,
             work_duration=input$work_duration,
             work_whowith=input$work_whowith,
             work_details=input$work_details,
+            work_notes=input$work_notes,
             market_yesno=input$market_yesno,
             market_sell=input$market_sell,
             market_sell_who=input$market_sell_who,
             market_buy=input$market_buy,
             market_buy_who=input$market_buy_who,
             market_notes=input$market_notes,
-        stringsAsFactors=FALSE)
+            other_yesno=input$other_yesno,
+            other_notes=input$other_notes,
+            stringsAsFactors=FALSE)
         resetTripFields(session=session)
         trip_table[edit_row,] <<- new_trip
     })
@@ -787,28 +851,37 @@ server <- function(input, output, session){
         shinyjs::show("travel_checkmark")
         travel_interview_output <- data.frame(
             interview_name="travel_main",
+            interview_timestamp_legible=as.character(format(travel_interview_timestamp_raw, "%Y%m%d-%H%M%OS")),
             interview_timestamp=travel_interview_timestamp, 
             interviewer_name=input$interviewer_name, 
             interview_device=input$interview_device,
             interview_location=input$interview_location,
             interview_lat=input$interview_lat,
             interview_lon=input$interview_lon,
-            subj_name=input$travel_subj_name, 
-            subj_sex=input$travel_subj_sex, 
-            subj_age=input$travel_subj_age, 
+            subj_name=input$travel_subj_name,
+            subj_age=input$travel_subj_age,
+            subj_sex=input$travel_subj_sex,
             stringsAsFactors=FALSE)
-        travel_interview_hash5 <- substr(digest(travel_interview_output, algo="md5"), 1, 10)
-        travel_interview_filename <- paste0(format(travel_interview_timestamp_raw, "%Y%m%d-%H%M%OS"), 
-            "-", travel_interview_hash5, ".csv")
+        travel_interview_filename <- paste(
+            travel_interview_output$subj_name,
+            travel_interview_output$interview_name,
+            format(travel_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
+        )
+        travel_interview_filename <- paste0(travel_interview_filename, ".csv")
         write.csv(travel_interview_output, file.path(responses_directory, travel_interview_filename), row.names=FALSE)
         write.csv(travel_interview_output, file.path(responses_directory_backup, travel_interview_filename), row.names=FALSE)
         if(nrow(trip_table)>0){
             trip_table$interview_name <- "travel_list"
-            trip_table$interview_timestamp <- travel_interview_timestamp
-            trip_table$subj_name <- input$subj_name
-            trip_table_hash5 <- substr(digest(trip_table, algo="md5"), 1, 10)
-            trip_table_filename <- paste0(format(travel_interview_timestamp_raw, "%Y%m%d-%H%M%OS"), 
-                "-", trip_table_hash5, ".csv")
+            trip_table$interview_timestamp_legible <- travel_interview_output$interview_timestamp_legible
+            trip_table$interview_timestamp <- travel_interview_output$interview_timestamp
+            trip_table$subj_name <- travel_interview_output$subj_name
+            trip_table$subj_age <- travel_interview_output$subj_age
+            trip_table_filename <- paste(
+                trip_table$subj_name[1],
+                trip_table$interview_name[1],
+                format(travel_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
+            )
+            trip_table_filename <- paste0(trip_table_filename, ".csv")
             write.csv(trip_table, file.path(responses_directory, trip_table_filename), row.names=FALSE)
             write.csv(trip_table, file.path(responses_directory_backup, trip_table_filename), row.names=FALSE)
         }
@@ -826,17 +899,17 @@ server <- function(input, output, session){
     observeEvent(input$add_relative, {
         edit_row <- input$relative_table_rows_selected
         if(is.null(edit_row) | input$relative_id=="0") edit_row <- nrow(relative_table) + 1
-        new_trip <- data.frame(
+        new_relative <- data.frame(
             relative_name=input$relative_name, 
             relative_subj_relationship=input$relative_subj_relationship, 
             relative_sex=input$relative_sex, 
             relative_age=input$relative_age, 
-            relative_dob=as.character(input$relative_dob), 
+            relative_dob=input$relative_dob, 
             relative_mom=input$relative_mom, 
             relative_dad=input$relative_dad, 
             stringsAsFactors=FALSE)
         resetRelativeFields(session=session)
-        relative_table[edit_row,] <<- new_trip
+        relative_table[edit_row,] <<- new_relative
       }
     )
     observeEvent(input$delete_relative, {
@@ -860,9 +933,8 @@ server <- function(input, output, session){
         updateTextInput(session, "relative_name", value = relative_table$relative_name[sel])
         updateTextInput(session, "relative_subj_relationship", value=relative_table$relative_subj_relationship[sel])
         updateRadioButtons(session, "relative_sex", selected = as.character(relative_table$relative_sex[sel]))
-        updateNumericInput(session, "relative_age", value = relative_table$relative_age[sel])
-        print(relative_table$relative_dob[sel])
-        updateDateInput(session, "relative_dob", value = relative_table$relative_dob[sel])
+        updateTextInput(session, "relative_age", value = relative_table$relative_age[sel])
+        updateTextInput(session, "relative_dob", value = relative_table$relative_dob[sel])
         updateTextInput(session, "relative_mom", value = relative_table$relative_mom[sel])
         updateTextInput(session, "relative_dad", value = relative_table$relative_dad[sel])
         updateActionButton(session, "add_relative", label = "Update Relative")
@@ -885,6 +957,7 @@ server <- function(input, output, session){
         shinyjs::show("demog_checkmark")
         demog_interview_output <- data.frame(
             interview_name="demog_main",
+            interview_timestamp_legible=as.character(format(demog_interview_timestamp_raw, "%Y%m%d-%H%M%OS")),
             interview_timestamp=demog_interview_timestamp, 
             interviewer_name=input$interviewer_name, 
             interview_device=input$interview_device,
@@ -893,21 +966,30 @@ server <- function(input, output, session){
             interview_lon=input$interview_lon,
             subj_name=input$demog_subj_name, 
             subj_sex=input$demog_subj_sex,
-            subj_dob=as.character(input$demog_subj_dob),
+            subj_dob=input$demog_subj_dob,
+            subj_age=input$demog_subj_age,
             subj_nkids=input$demog_number_kids,
             stringsAsFactors=FALSE)
-        demog_interview_hash5 <- substr(digest(demog_interview_output, algo="md5"), 1, 10)
-        demog_interview_filename <- paste0(format(demog_interview_timestamp_raw, "%Y%m%d-%H%M%OS"), 
-            "-", demog_interview_hash5, ".csv")
+        demog_interview_filename <- paste(
+            demog_interview_output$subj_name,
+            demog_interview_output$interview_name,
+            format(demog_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
+        )
+        demog_interview_filename <- paste0(demog_interview_filename, ".csv")
         write.csv(demog_interview_output, file.path(responses_directory, demog_interview_filename), row.names=FALSE)
         write.csv(demog_interview_output, file.path(responses_directory_backup, demog_interview_filename), row.names=FALSE)
         if(nrow(relative_table)>0){
             relative_table$interview_name <- "demog_relatives"
-            relative_table$interview_timestamp <- demog_interview_timestamp
-            relative_table$subj_name <- input$subj_name
-            relative_table_hash5 <- substr(digest(relative_table, algo="md5"), 1, 10)
-            relative_table_filename <- paste0(format(demog_interview_timestamp_raw, "%Y%m%d-%H%M%OS"), 
-                "-", relative_table_hash5, ".csv")
+            relative_table$interview_timestamp_legible <- demog_interview_output$interview_timestamp_ledigble
+            relative_table$interview_timestamp <- demog_interview_output$interview_timestamp_ledigble
+            relative_table$subj_name <- demog_interview_output$subj_name
+            relative_table$subj_age <- demog_interview_output$subj_age
+            relative_table_filename <- paste(
+                relative_table$subj_name[1],
+                relative_table$interview_name[1],
+                format(demog_interview_timestamp_raw, "%Y%m%d-%H%M%OS")
+            )
+            relative_table_filename <- paste0(relative_table_filename, ".csv")
             write.csv(relative_table, file.path(responses_directory, relative_table_filename), row.names=FALSE)
             write.csv(relative_table, file.path(responses_directory_backup, relative_table_filename), row.names=FALSE)
 
