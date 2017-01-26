@@ -1,5 +1,5 @@
 # default settings for pan interviews
-# note that a number sign (#) functions as a comment, so use in strings requires quotation marks
+# note that a number sign (#) functions as a comment, so strings require quotation marks
 
 device_name: 'Tablet PC #1'
 interviewer_name: John
