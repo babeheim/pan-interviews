@@ -187,111 +187,6 @@ ui <- fluidPage(title="pan-interviews",
     shinyjs::useShinyjs(),
     theme=shinytheme(interview_settings$shiny_ui_theme),
     navbarPage(title="pan", id='main_navbar',
-        tabPanel("travel",
-            fluidRow(
-                column(width=3,
-                    wellPanel(
-                        textInput(inputId="travel_subj_name", label="Name", value=""),
-                        radioButtons(inputId="travel_subj_sex", label=NULL, choices=c("male", "female"), 
-                            selected="male", inline=TRUE),
-                        textInput(inputId="travel_subj_age", label="Age", value="")
-                    )   
-                ),
-                column(width=3,
-                    column(width=6,
-                        h4("List of Places"),
-                        "Fatima", br(),
-                        "Arenales", br(),
-                        "Chacal", br(),
-                        "Pupuritumpsi", br(),
-                        "Maraca", br(),
-                        "Ivasichi", br(),
-                        "Las Palmas", br(),
-                        "Emeya", br(),
-                        "Cuchisama"
-                    ),
-                    column(width=6,
-                        br(),
-                        "Agua Negro", br(),
-                        "San Jose", br(),
-                        "San Antonio", br(),
-                        "Tacuaral", br(),
-                        "Covendo", br(),
-                        "Moseruna", br(),
-                        "La Paz", br(),
-                        "Rurrenabaque", br(),
-                        "San Borja"
-                    )
-                ),
-                column(width=6,
-                    wellPanel(
-                        tags$style(HTML('#trip_table {color:#848484}')),
-                        DT::dataTableOutput('trip_table'),
-                        actionButton(inputId="delete_trip", label="Remove")
-                    )
-                )
-            ),
-            fluidRow(
-                wellPanel(style = "overflow: hidden;",
-                    h4("Trip Details"),
-                    column(width=3,
-                        shinyjs::hidden(textInput(inputId="trip_id", label="Id", value="0")),
-                        textInput(inputId="trip_location", label="Location", value=""),
-                        textInput(inputId="trip_times_visited", label="How many times visited?", value=""),
-                        textInput(inputId="trip_durations", label="How long did you stay each time?", value=""),
-                        textInput(inputId="trip_hosts", label="Whom did you stay with?", value=""),
-                        column(width=12, offset=7, actionButton(inputId="add_trip", label="Add Trip"))
-                    ),
-                    column(width=2,
-                        checkboxInput(inputId="school_yesno", label="School", value=FALSE),
-                        textInput(inputId="school_duration", label="For how long?", value=""),
-                        textInput(inputId="school_level", label="What grade levels?", value=""),
-                        textInput(inputId="school_tuition", label="Who paid for school?", value=""),
-                        textAreaInput(inputId="school_notes", label="Notes", value="", resize="none")
-                    ),
-                    column(width=2,
-                        checkboxInput(inputId="work_yesno", label="Work", value=FALSE),
-                        textInput(inputId="work_duration", label="For how long?", value=""),
-                        textInput(inputId="work_whowith", label="Who did you work with?", value=""),
-                        textInput(inputId="work_details", label="What was the nature of the work?", value=""),
-                        textAreaInput(inputId="work_notes", label="Notes", value="", resize="none")
-                    ),                
-                    column(width=2,
-                        checkboxInput(inputId="market_yesno", label="Buy/Sell", value=FALSE),
-                        textInput(inputId="market_sell", label="What did you sell?", value=""),
-                        textInput(inputId="market_sell_who", label="To whom?", value=""),
-                        textInput(inputId="market_buy", label="What did you buy?", value=""),
-                        textInput(inputId="market_buy_who", label="From whom?", value=""),
-                        textAreaInput(inputId="market_notes", label="Notes", value="", resize="none")
-                    ),                
-                    column(width=3,
-                        checkboxInput(inputId="other_yesno", label="Other", value=FALSE),
-                        textAreaInput(inputId="other_notes", label="Notes", value="", height=300, resize="none")
-                    )
-                )
-            ),
-            fluidRow(
-                column(width=3, offset=9,
-                    wellPanel(
-                        actionButton(inputId="travel_submit_init", label="Submit Travel Interview"),
-                        shinyjs::hidden(img(id="travel_checkmark", src="check.png")),
-                        shinyjs::hidden(
-                            div(id="travel_submit_prompt",
-                                "are you sure you are ready to submit?",
-                                br(),
-                                actionButton(inputId="travel_submit_yes", label="yes"),
-                                actionButton(inputId="travel_submit_no", label="no")
-                            )
-                        ),
-                        shinyjs::hidden(
-                            div(id="travel_submit_confirmation",
-                                "data saved"
-                            )
-                        )
-                    )
-                )
-            )
-        ),
         tabPanel("narratives",
             fluidRow(
                 column(width=3,
@@ -302,19 +197,36 @@ ui <- fluidPage(title="pan-interviews",
                         textInput(inputId="story_subj_age", label="Age", value="")
                     )
                 ),
-                column(width=3,
+                column(width=6,
                     wellPanel(
-                        "Here you can put some notes about what topics to discuss, 
-                        in case you forgot!", br(),
+                        "Tiara pimechoti / pikimotake?", br(),
+                        "Pitimake parikoti? Tiara?", br(),
+                        "Akati pishiriagakota piatakera hanta pitimake?", br(),
+                        "Akati pishiriagakota pipokakera Yomibato pitimake?", br(),
+                        "Pikiake escuela? Tiara? Que grado? (Tatampa pikontetake?)", br(),
+                        "Tiatake pineakeri/o pijina? Tia pikantake pinintakeria? Tia i/okanti p/iri/p/ir/iniro?", br(),
+                        "Ainho pitomiegi ikamake?", br(),
                         br(),
-                        "Be sure to ask about", br(),
-                        "Interactions with outsiders", br(),
-                        "How you met your partner", br(),
-                        "Recent deaths and why", br(),
-                        "What you want for your children"
+                        "Submit, then switch to Demog then Travel tabs", br(),
+                        br(),
+                        "1. Pogotagantakeri/o wiracocha / y/ogotagakempi?", br(),
+                        "2. Wiracocha y/ocuidatakempi pimatsigatake / picuidatakeri/o?", br(),
+                        "3. Pitsipawakagaigaka wiracocha (pishaninka)?", br(),
+                        "4. Pineasanotake wiracocha? (Caleb? Pedro? vinti catolico?)", br(),
+                        "5. Pinintawakagaigaka wiracocha?", br(),
+                        br(),
+                        "6. Pineasanotake shimirintsi, amiwaka, kogapakori?", br(),
+                        "7. (Female) Ashtakotakempi? Tiara? Akati kashiri? Pikogake?", br(),
+                        "8. Pikogake ashtakotakero pishinto? Pijina? Tatampa?", br(),
+                        br(),
+                        "9. Ainho pashini sidadi itsamaitera kamatitya. Tata isekataigake itomiegi?", br(),
+                        "10. Ainho pashini sidadi ontiri ojina para ishinkitaka. Tata isekataigake itomiegi?", br(),
+                        "11. Ainho pashini sidadi itsamaitera kamatitya. Tata isekataigake itomiegi?", br(),
+                        "12. Pikogake pitomiegi ikiagake escuela sotsikue? Tatampa?"
+
                     )
                 ),
-                column(width=6,
+                column(width=3,
                     wellPanel(
                         textOutput("story_body_toprint")
                     )
@@ -328,9 +240,9 @@ ui <- fluidPage(title="pan-interviews",
                 ),
                 column(width=6,
                     wellPanel(
-                        textInput(inputId="story_title", label="Vignette Title", value=""),
-                        textAreaInput(inputId="story_body", label="Vignette Body", value="", height=200, resize="none"),
-                        actionButton(inputId="add_story", label="Add Vignette")
+                        textInput(inputId="story_title", label="Life story or prompt question", value=""),
+                        textAreaInput(inputId="story_body", label="Notes/Answers", value="", height=200, resize="none"),
+                        actionButton(inputId="add_story", label="Add Note/Answer")
                     )
                 ),
                 column(width=3,
@@ -359,6 +271,7 @@ ui <- fluidPage(title="pan-interviews",
                 )
             )
         ),
+
         tabPanel("demog",
             fluidRow(
                 column(width=3,
@@ -366,20 +279,20 @@ ui <- fluidPage(title="pan-interviews",
                         textInput(inputId="demog_subj_name", label="Name", value=""),
                         radioButtons(inputId="demog_subj_sex", label=NULL, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        textInput(inputId="demog_subj_age", label="Age", value=""),
+                        textInput(inputId="demog_subj_age", label="Age; where born", value=""),
                         textInput(inputId="demog_subj_dob",label="Date of Birth", value=""),
                         numericInput(inputId="demog_number_kids", label="Number of Kids", value="")
                     )
                 ),
-                column(width=3,
+                column(width=5,
                     wellPanel(
                         shinyjs::hidden(textInput(inputId="relative_id", label="Id", value="0")),
                         textInput(inputId="relative_name", label="Relative Name"),
-                        textInput(inputId="relative_subj_relationship", label="Relationship"),
+                        textInput(inputId="relative_subj_relationship", label="Relationship (piariri/pirienti, pivire/pitsiro)"),
                         radioButtons(inputId="relative_sex", label=NA, choices=c("male", "female"), 
                             selected="male", inline=TRUE),
-                        textInput(inputId="relative_dob", label="Date of Birth", value=""),
-                        textInput(inputId="relative_age", label="Age", value=""),
+                        textInput(inputId="relative_dob", label="Date of Birth; where born; alive / where live now?", value=""),
+                        textInput(inputId="relative_age", label="Age; your age when kid born", value=""),
                         textInput(inputId="relative_mom", label="Mother"),
                         textInput(inputId="relative_dad", label="Father"),
 
@@ -391,7 +304,7 @@ ui <- fluidPage(title="pan-interviews",
                         br()
                     )
                 ),
-                column(width=6,
+                column(width=4,
                     wellPanel(
                         tags$style(HTML('#relative_table {color:#848484}')),
                         DT::dataTableOutput("relative_table"),
@@ -426,6 +339,120 @@ ui <- fluidPage(title="pan-interviews",
                 )
             )
         ),
+
+        tabPanel("travel",
+            fluidRow(
+                column(width=3,
+                    wellPanel(
+                        textInput(inputId="travel_subj_name", label="Name", value=""),
+                        radioButtons(inputId="travel_subj_sex", label=NULL, choices=c("male", "female"), 
+                            selected="male", inline=TRUE),
+                        textInput(inputId="travel_subj_age", label="Age", value="")
+                    )   
+                ),
+                column(width=3,
+                    column(width=6,
+                        h4("List of Places"),
+                        "Yomibato", br(),
+                        "Tayakome", br(),
+                        "Casa Machi", br(),
+                        "Cocha Cashu", br(),
+                        "Boca Manu", br(),
+                        "Shintuya", br(),
+                        "Shipetiari"
+                        
+                    ),
+                    column(width=6,
+                        br(),
+                        "Atalaya", br(),
+                        "Segakiato", br(),
+                        "Camisea", br(),
+                        "Quillabamba", br(),
+                        "Yarinacocha", br(),
+                        "Cusco", br(),
+                        "Puerto Maldonado", br(),
+                        "Colorado", br(),
+                        "Lima", br(),
+                        "Otra Ciudad"
+                    )
+                ),
+                column(width=6,
+                    wellPanel(
+                        tags$style(HTML('#trip_table {color:#848484}')),
+                        DT::dataTableOutput('trip_table'),
+                        actionButton(inputId="delete_trip", label="Remove")
+                    )
+                )
+            ),
+            fluidRow(
+                wellPanel(style = "overflow: hidden;",
+                    h4("Trip Details"),
+                    column(width=3,
+                        shinyjs::hidden(textInput(inputId="trip_id", label="Id", value="0")),
+                        textInput(inputId="trip_location", label="Location", value=""),
+                        textInput(inputId="trip_times_visited", label="How many times visited?", value=""),
+                        textInput(inputId="trip_durations", label="How long did you stay each time?", value=""),
+                        textInput(inputId="trip_hosts", label="Whom did you stay with?", value=""),
+                        column(width=12, offset=7, actionButton(inputId="add_trip", label="Add Trip"))
+                    ),
+                    column(width=2,
+                        checkboxInput(inputId="school_yesno", label="School", value=FALSE),
+                        textInput(inputId="school_duration", label="For how long?", value=""),
+                        textInput(inputId="school_level", label="What grade levels?", value=""),
+                        textInput(inputId="school_tuition", label="Tatampa pikontetake?", value=""),
+                        textAreaInput(inputId="school_notes", label="Notes", value="", resize="none")
+                    ),
+                    column(width=2,
+                        checkboxInput(inputId="work_yesno", label="Work", value=FALSE),
+                        textInput(inputId="work_duration", label="For how long?", value=""),
+                        textInput(inputId="work_whowith", label="Who did you work with?", value=""),
+                        textInput(inputId="work_details", label="Type of work?", value=""),
+                        textAreaInput(inputId="work_notes", label="Notes", value="", resize="none")
+                    ),                
+                    column(width=2,
+                        checkboxInput(inputId="market_yesno", label="Buy/Sell", value=FALSE),
+                        textInput(inputId="market_sell", label="What did you sell?", value=""),
+                        textInput(inputId="market_sell_who", label="To whom?", value=""),
+                        textInput(inputId="market_buy", label="What did you buy?", value=""),
+                        textInput(inputId="market_buy_who", label="From whom?", value=""),
+                        textAreaInput(inputId="market_notes", label="Notes", value="", resize="none")
+                    ),                
+                    column(width=3,
+                        checkboxInput(inputId="other_yesno", label="Other", value=FALSE),
+                        textAreaInput(inputId="other_notes", label="Notes", value="", height=100, resize="none"),
+                        "Eat there?", br(),
+                        "Play sports?", br(),
+                        "Drink beer/masato?", br(),
+                        "Church?", br(),
+                        "Post medica?", br(),
+                        "Hunt/fish?", br(),
+                        "Pikenkisatake anyone (wiracocha)?"
+                    )
+                )
+            ),
+            fluidRow(
+                column(width=3, offset=9,
+                    wellPanel(
+                        actionButton(inputId="travel_submit_init", label="Submit Travel Interview"),
+                        shinyjs::hidden(img(id="travel_checkmark", src="check.png")),
+                        shinyjs::hidden(
+                            div(id="travel_submit_prompt",
+                                "are you sure you are ready to submit?",
+                                br(),
+                                actionButton(inputId="travel_submit_yes", label="yes"),
+                                actionButton(inputId="travel_submit_no", label="no")
+                            )
+                        ),
+                        shinyjs::hidden(
+                            div(id="travel_submit_confirmation",
+                                "data saved"
+                            )
+                        )
+                    )
+                )
+            )
+        ),
+
         tabPanel(""),
         tabPanel(""),
         tabPanel(""),
